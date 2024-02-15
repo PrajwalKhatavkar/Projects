@@ -1,0 +1,151 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define the structure for a student
+struct Student {
+    int id;
+    char name[50];
+    float marks;
+    struct Student* next;
+};
+
+// Function to create a new student node
+struct Student* createStudent(int id, const char* name, float marks) {
+    struct Student* newStudent = (struct Student*)malloc(sizeof(struct Student));
+    newStudent->id = id;
+    strcpy(newStudent->name, name);
+    newStudent->marks = marks;
+    newStudent->next = NULL;
+    return newStudent;
+}
+
+// Function to insert a student record at the end of the list and write to file
+void insertStudent(struct Student** head, int id, const char* name, float marks) {
+    struct Student* newStudent = createStudent(id, name, marks);
+    if (*head == NULL) {
+        *head = newStudent;
+    } else {
+        struct Student* temp = *head;
+        while (temp->next != NULL) {
+            temp = temp->next;
+        }
+        temp->next = newStudent;
+    }
+
+    // Write student record to file
+    FILE* fp = fopen("student_records.txt", "a");
+    if (fp != NULL) {
+        fprintf(fp, "%d,%s,%.2f\n", id, name, marks);
+        fclose(fp);
+    } else {
+        printf("Error opening file for writing!\n");
+    }
+}
+
+// Function to display all student records
+void displayStudents(struct Student* head) {
+    printf("Student Records:\n");
+    printf("ID\tName\tMarks\n");
+    while (head != NULL) {
+        printf("%d\t%s\t%.2f\n", head->id, head->name, head->marks);
+        head = head->next;
+    }
+}
+
+// Function to delete all student records and free memory
+void deleteStudents(struct Student** head) {
+    struct Student* current = *head;
+    struct Student* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    *head = NULL;
+}
+
+// Function to read student records from file and populate the linked list
+void readStudentsFromFile(struct Student** head) {
+    FILE* fp = fopen("student_records.txt", "r");
+    if (fp != NULL) {
+        int id;
+        char name[50];
+        float marks;
+        while (fscanf(fp, "%d,%[^,],%f\n", &id, name, &marks) == 3) {
+            insertStudent(head, id, name, marks);
+        }
+        fclose(fp);
+    } else {
+        printf("Error opening file for reading!\n");
+    }
+}
+
+// Function to search for a student by ID
+struct Student* searchStudentById(struct Student* head, int id) {
+    while (head != NULL) {
+        if (head->id == id) {
+            return head;
+        }
+        head = head->next;
+    }
+    return NULL; // Student not found
+}
+
+int main() {
+    struct Student* head = NULL;
+
+    // Read student records from file and populate the linked list
+    readStudentsFromFile(&head);
+
+    int choice, id;
+    char name[50];
+    float marks;
+
+    do {
+        printf("\nMenu:\n");
+        printf("1. Add a new student record\n");
+        printf("2. Search for a student by ID\n");
+        printf("3. Display all student records\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                printf("Enter student ID: ");
+                scanf("%d", &id);
+                printf("Enter student name: ");
+                scanf("%s", name);
+                printf("Enter student marks: ");
+                scanf("%f", &marks);
+                insertStudent(&head, id, name, marks);
+                break;
+            case 2:
+                printf("Enter student ID to search: ");
+                scanf("%d", &id);
+                struct Student* foundStudent = searchStudentById(head, id);
+                if (foundStudent != NULL) {
+                    printf("Student found:\n");
+                    printf("ID\tName\tMarks\n");
+                    printf("%d\t%s\t%.2f\n", foundStudent->id, foundStudent->name, foundStudent->marks);
+                } else {
+                    printf("Student with ID %d not found!\n", id);
+                }
+                break;
+            case 3:
+                displayStudents(head);
+                break;
+            case 4:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice! Please enter a number between 1 and 4.\n");
+        }
+    } while (choice != 4);
+
+    // Delete all student records
+    deleteStudents(&head);
+
+    return 0;
+}
