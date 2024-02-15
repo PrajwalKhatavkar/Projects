@@ -1,0 +1,61 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+// Function to execute shell commands and handle errors
+int execute_command(const char* command) {
+    int status = system(command);
+    if (status == -1) {
+        perror("Error executing command");
+        exit(EXIT_FAILURE);
+    }
+    return status;
+}
+
+int main() {
+    printf("Starting Apache web server deployment...\n");
+
+    // Update package repositories
+    printf("Updating package repositories...\n");
+    execute_command("sudo apt update");
+
+    // Install Apache web server
+    printf("Installing Apache web server...\n");
+    execute_command("sudo apt install -y apache2");
+
+    // Start Apache web server
+    printf("Starting Apache web server...\n");
+    execute_command("sudo systemctl start apache2");
+
+    // Enable Apache web server to start on boot
+    printf("Enabling Apache web server to start on boot...\n");
+    execute_command("sudo systemctl enable apache2");
+
+    // Create a simple webpage
+    printf("Creating a simple webpage...\n");
+    FILE* webpage_file = fopen("/var/www/html/index.html", "w");
+    if (webpage_file == NULL) {
+        perror("Error creating webpage file");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(webpage_file, "<!DOCTYPE html>\n");
+    fprintf(webpage_file, "<html>\n");
+    fprintf(webpage_file, "<head>\n");
+    fprintf(webpage_file, "<title>Welcome to my website</title>\n");
+    fprintf(webpage_file, "</head>\n");
+    fprintf(webpage_file, "<body>\n");
+    fprintf(webpage_file, "<h1>Hello, World!</h1>\n");
+    fprintf(webpage_file, "<p>This is a simple webpage served by Apache.</p>\n");
+    fprintf(webpage_file, "</body>\n");
+    fprintf(webpage_file, "</html>\n");
+    fclose(webpage_file);
+
+    // Restart Apache web server to apply changes
+    printf("Restarting Apache web server to apply changes...\n");
+    execute_command("sudo systemctl restart apache2");
+
+    printf("Apache web server deployment completed successfully.\n");
+
+    return 0;
+}
